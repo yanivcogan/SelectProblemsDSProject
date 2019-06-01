@@ -17,7 +17,9 @@ public class SelectProblems
   private int[] quickSortRec(int[] array, int start, int end, ComparisonCounter c){
     if (end - start <= 0)
       return array;
+    //choose a random pivot element
     int pivot = array[(int)(Math.random() * (end - start) + start)];
+    //create a new array, which will contain the partition based on the chosen pivot
     int[] partition = new int[end - start];
     //We are going to generate a partition by inserting elements to both the start and the end of an array
     //These variables keep track of where the next element should be inserted
