@@ -11,7 +11,6 @@ public class SelectProblems
   {
     ComparisonCounter c = new ComparisonCounter();
     quickSortRec(array, 0, array.length, c);
-    System.out.println(Arrays.toString(array));
     return new Pair<Integer, Integer>(array[k], c.getCount()); // to be replaced by student code. (The k'th element,#of comparsion)
   }
   private int[] quickSortRec(int[] array, int start, int end, ComparisonCounter c){
@@ -22,7 +21,7 @@ public class SelectProblems
     Partition p = new Partition(array, pivot, start, end, c);
     //sub-partition both segments of the partition
     quickSortRec(p.array, 0, p.lessThanSeparator, c);
-    quickSortRec(p.array, p.array.length - p.greaterThanSeparator, p.array.length, c);
+    quickSortRec(p.array, p.greaterThanSeparator, p.array.length, c);
     //apply partition in-place to the input array
     for(int i = start; i < end; i++){
       array[i] = p.array[i - start];
@@ -43,7 +42,21 @@ public class SelectProblems
   }
   public Pair<Integer, Integer> randQuickSelect(int [] array, int k)
   {
-    return new Pair<Integer, Integer>(-1,-1); // to be replaced by student code. (The k'th element,#of comparsion)
+    ComparisonCounter c = new ComparisonCounter();
+    Integer selected = quickSelectRec(array, k, 0, array.length, c);
+    return new Pair<Integer, Integer>(selected, c.getCount()); // to be replaced by student code. (The k'th element,#of comparsion)
+  }
+  private int quickSelectRec(int[] array, int k, int start, int end, ComparisonCounter c){
+    if (end - start <= 0)
+      return array[k];
+    //choose a random pivot element
+    int pivot = array[(int)(Math.random() * (end - start) + start)];
+    Partition p = new Partition(array, pivot, start, end, c);
+    if(p.lessThanSeparator > k)
+      return quickSelectRec(p.array, k, 0, p.lessThanSeparator, c);
+    if(p.greaterThanSeparator <= k)
+      return quickSelectRec(p.array, k - p.greaterThanSeparator, p.greaterThanSeparator, p.array.length, c);
+    return pivot;
   }
   public Pair<Integer, Integer> medOfMedQuickSelect(int [] array, int k)
   {
@@ -79,7 +92,7 @@ public class SelectProblems
       }
       this.array = partition;
       this.lessThanSeparator = indexFromStart;
-      this.greaterThanSeparator = indexFromEnd;
+      this.greaterThanSeparator = partition.length - indexFromEnd;
     }
   }
   private static class ComparisonCounter{
