@@ -3,15 +3,19 @@ import javafx.util.Pair;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 
-
 public class SelectProblems
 {
+
+  enum PivotMethod{
+    RANDOM,
+    MED_OF_MEDS
+  }
 
   public Pair<Integer, Integer> selectRandQuickSort(int [] array, int k)
   {
     ComparisonCounter c = new ComparisonCounter();
     quickSortRec(array, 0, array.length, c);
-    return new Pair<Integer, Integer>(array[k], c.getCount()); // to be replaced by student code. (The k'th element,#of comparsion)
+    return new Pair<Integer, Integer>(array[k - 1], c.getCount()); // to be replaced by student code. (The k'th element,#of comparsion)
   }
   private int[] quickSortRec(int[] array, int start, int end, ComparisonCounter c){
     if (end - start <= 0)
@@ -28,16 +32,37 @@ public class SelectProblems
     }
     return array;
   }
-  public Pair<Integer, Integer> selectInsertionSort(int [] array, int k)
+
+  //swaps the indexes of two members in array
+  private static void swap(int [] array, int ind1, int ind2)
   {
-    return new Pair<Integer, Integer>(-1,-1); // to be replaced by student code. (The k'th element,#of comparsion)
+    int temp = array[ind1];
+    array[ind1] = array[ind2];
+    array[ind2] = temp;
   }
+
+  public Pair<Integer, Integer> selectInsertionSort(int[] array, int k) {
+    return selectInsertionSort(array, k, 0, array.length, new ComparisonCounter());
+  }
+
+  public Pair<Integer, Integer> selectInsertionSort(int [] array, int k, int start, int end, ComparisonCounter c)
+  {
+    for(int i = start + 1; i < end; ++i) {
+      int j = i;
+      while (j > start && c.less(array[j], array[j - 1])) {
+        swap(array, j, j - 1);
+        j--;
+      }
+    }
+    return new Pair<Integer, Integer>(array[start + k - 1], c.getCount());
+  }
+
   public Pair<Integer, Integer> selectHeap(int [] array, int k)
   {
     ComparisonCounter c = new ComparisonCounter();
     MinHeap heap = new MinHeap(array, c);
     int res = heap.getNthElement(k);
-    return new Pair<Integer, Integer>(res, c.getCount()); // to be replaced by student code. (The k'th element,#of comparsion)
+    return new Pair<Integer, Integer>(res, c.getCount());
   }
   public Pair<Integer, Integer> selectDoubleHeap(int [] array, int k)
   {
@@ -46,25 +71,62 @@ public class SelectProblems
   public Pair<Integer, Integer> randQuickSelect(int [] array, int k)
   {
     ComparisonCounter c = new ComparisonCounter();
-    Integer selected = quickSelectRec(array, k, 0, array.length, c);
-    return new Pair<Integer, Integer>(selected, c.getCount()); // to be replaced by student code. (The k'th element,#of comparsion)
+    Integer selected = quickSelectRec(array, k, 0, array.length, c, PivotMethod.RANDOM);
+    return new Pair<Integer, Integer>(selected, c.getCount());
   }
-  private int quickSelectRec(int[] array, int k, int start, int end, ComparisonCounter c){
+
+  private int quickSelectRec(int[] array, int k, int start, int end, ComparisonCounter c, PivotMethod method){
     if (end - start <= 0)
-      return array[k];
+      return array[k - 1];
     //choose a random pivot element
-    int pivot = array[(int)(Math.random() * (end - start) + start)];
+    int pivot = (method == PivotMethod.MED_OF_MEDS)?
+            medOfMed(array, start, end, c) : array[(int)(Math.random() * (end - start) + start)];
     Partition p = new Partition(array, pivot, start, end, c);
-    if(p.lessThanSeparator > k)
-      return quickSelectRec(p.array, k, 0, p.lessThanSeparator, c);
-    if(p.greaterThanSeparator <= k)
-      return quickSelectRec(p.array, k - p.greaterThanSeparator, p.greaterThanSeparator, p.array.length, c);
+    if(p.lessThanSeparator >= k)
+      return quickSelectRec(p.array, k, 0, p.lessThanSeparator, c, method);
+    if(p.greaterThanSeparator < k)
+      return quickSelectRec(p.array, k - p.greaterThanSeparator, p.greaterThanSeparator, p.array.length, c, method);
     return pivot;
   }
+  public int medOfMed(int [] array, int start, int end, ComparisonCounter c)
+  {
+    if(end - start <= 5)
+      return mid5(array, start, end, c);;
+    int i;
+    int selected = 0;
+    int nMedians = (end - start) / 5;
+    nMedians += (end - start) % 5 == 0 ? 0 : 1;
+    int[] mids = new int[nMedians];
+
+    for(i = start; i < end - 5; i = i + 5)
+    {
+      mids[selected] = selectInsertionSort(array, 3, i, i + 4, c).getKey();
+      selected++;
+    }
+    mids[selected] = mid5(array, i, end, c);
+    return  quickSelectRec(mids, (nMedians + 1)/2 ,0,nMedians, c, PivotMethod.MED_OF_MEDS);
+  }
+//TODO change to private
+  public int mid5(int[] array, int start, int end, ComparisonCounter c) {
+    if(c == null)
+      c = new ComparisonCounter(); //for debug
+    int size = end - start;
+    if(size == 1) {
+      return array[start];
+    }
+    selectInsertionSort(array, 1, start, end, c);
+    if(size % 2 == 1)
+      return array[start + (size / 2)];
+    return size == 2? (array[0] + array[1])/2 : (array[2] + array[3])/2; // in this case array size is 2 or 4
+  }
+
   public Pair<Integer, Integer> medOfMedQuickSelect(int [] array, int k)
   {
-    return new Pair<Integer, Integer>(-1,-1); // to be replaced by student code. (The k'th element,#of comparsion)
+    ComparisonCounter c = new ComparisonCounter();
+    Integer selected = quickSelectRec(array, k, 0, array.length, c, PivotMethod.MED_OF_MEDS);
+    return new Pair<Integer, Integer>(selected, c.getCount()); // to be replaced by student code. (The k'th element,#of comparsion)
   }
+
   private static class Partition{
     //the array containing the partition
     private int[] array;
@@ -104,6 +166,11 @@ public class SelectProblems
       counter ++;
       //System.out.println("comparing " + a + " and " + b);
       return Integer.compare(a, b);
+    }
+
+    public boolean less(Integer a, Integer b){
+      counter ++;
+      return a < b;
     }
     public int getCount(){
       return counter;
@@ -151,9 +218,7 @@ public class SelectProblems
       }
       if(smallerChildIndex != i)
       {
-        int currElement = heap[i];
-        heap[i] = heap[smallerChildIndex];
-        heap[smallerChildIndex] = currElement;
+        swap(heap, i, smallerChildIndex);
         heapifyDown(smallerChildIndex);
       }
     }
