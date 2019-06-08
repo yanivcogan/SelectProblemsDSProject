@@ -28,10 +28,30 @@ public class SelectProblems
     }
     return array;
   }
-  public Pair<Integer, Integer> selectInsertionSort(int [] array, int k)
+
+  private static void swap(int [] array, int ind1, int ind2)
   {
-    return new Pair<Integer, Integer>(-1,-1); // to be replaced by student code. (The k'th element,#of comparsion)
+   int temp = array[ind1];
+    array[ind1] = array[ind2];
+    array[ind2] = temp;
   }
+
+  public Pair<Integer, Integer> selectInsertionSort(int[] array, int k) {
+    return selectInsertionSort(array, k, 0, array.length, new ComparisonCounter());
+  }
+
+  public Pair<Integer, Integer> selectInsertionSort(int [] array, int k, int start, int end, ComparisonCounter c)
+  {
+    for(int i = start + 1; i < end; ++i) {
+      int j = i;
+      while (j > start && c.less(array[j], array[j - 1])) {
+        swap(array, j, j - 1);
+        j--;
+      }
+    }
+    return new Pair<Integer, Integer>(array[start + k - 1], c.getCount());
+  }
+
   public Pair<Integer, Integer> selectHeap(int [] array, int k)
   {
     return new Pair<Integer, Integer>(-1,-1); // to be replaced by student code. (The k'th element,#of comparsion)
@@ -46,6 +66,7 @@ public class SelectProblems
     Integer selected = quickSelectRec(array, k, 0, array.length, c);
     return new Pair<Integer, Integer>(selected, c.getCount()); // to be replaced by student code. (The k'th element,#of comparsion)
   }
+
   private int quickSelectRec(int[] array, int k, int start, int end, ComparisonCounter c){
     if (end - start <= 0)
       return array[k];
@@ -58,10 +79,63 @@ public class SelectProblems
       return quickSelectRec(p.array, k - p.greaterThanSeparator, p.greaterThanSeparator, p.array.length, c);
     return pivot;
   }
+
+  private int quickSelectRec(int[] array, int k, int start, int end, ComparisonCounter c, boolean median){
+    if (end - start <= 0)
+      return array[k];
+    //choose a random pivot element
+    int pivot = median? medOfMed(array, start, end, c) : array[(int)(Math.random() * (end - start) + start)];
+    Partition p = new Partition(array, pivot, start, end, c);
+    if(p.lessThanSeparator > k)
+      return quickSelectRec(p.array, k, 0, p.lessThanSeparator, c, median);
+    if(p.greaterThanSeparator <= k)
+      return quickSelectRec(p.array, k - p.greaterThanSeparator, p.greaterThanSeparator, p.array.length, c, median);
+    return pivot;
+  }
+
+  public int medOfMed(int [] array, int start, int end, ComparisonCounter c)
+  {
+    if(end - start <= 5)
+      return mid5(array, start, end, c);;
+    int i;
+    int selected = 0;
+    int nMedians = (end - start) / 5;
+    nMedians += (end - start) % 5 == 0 ? 0 : 1;
+    int[] mids = new int[nMedians];
+
+    for(i = start; i < end - 5; i = i + 5)
+    {
+      mids[selected] = selectInsertionSort(array, 3, i, i + 4, c).getKey();
+      selected++;
+    }
+    mids[selected] = mid5(array, i, end, c);
+    //if(selected < nMedians - 1)
+    //{
+    //  mids[selected] = mid5(array, i, end, c);
+    //}
+    return  quickSelectRec(mids, (nMedians + 1)/2 ,0,nMedians, c, true);
+  }
+//change to private
+  public int mid5(int[] array, int start, int end, ComparisonCounter c) {
+    if(c == null)
+      c = new ComparisonCounter(); //for debug
+    int size = end - start;
+    if(size == 1) {
+      return array[start];
+    }
+    selectInsertionSort(array, 1, start, end, c);
+    if(size % 2 == 1)
+      return array[start + (size / 2)];
+    return size == 2? (array[0] + array[1])/2 : (array[2] + array[3])/2; // in this case array size is 2 or 4
+  }
+
   public Pair<Integer, Integer> medOfMedQuickSelect(int [] array, int k)
   {
-    return new Pair<Integer, Integer>(-1,-1); // to be replaced by student code. (The k'th element,#of comparsion)
+    ComparisonCounter c = new ComparisonCounter();
+    Integer selected = quickSelectRec(array, k, 0, array.length, c, true);
+    return new Pair<Integer, Integer>(selected, c.getCount()); // to be replaced by student code. (The k'th element,#of comparsion)
   }
+
   private static class Partition{
     //the array containing the partition
     private int[] array;
@@ -101,6 +175,11 @@ public class SelectProblems
       counter ++;
       //System.out.println("comparing " + a + " and " + b);
       return Integer.compare(a, b);
+    }
+
+    public boolean less(Integer a, Integer b){
+      counter ++;
+      return a < b;
     }
     public int getCount(){
       return counter;
