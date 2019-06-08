@@ -14,7 +14,7 @@ public class Main {
     }
 
     private static void TestMidofMids() {
-        TestSelect test = new TestSelect(TestSelect.Func.MED_OF_MEDS, 100);
+        TestSelect test = new TestSelect(TestSelect.Func.MED_OF_MEDS, 1000);
         try {
             test.Test();
         } catch (TestSelect.FailedTestException e) {
@@ -29,7 +29,7 @@ public class Main {
         int[] sorted = a.clone();
         Arrays.sort(sorted);
         for(int i = 0; i < a.length; i++){
-            assert sorted[i] == selector.selectRandQuickSort(a, i).getKey();
+            assert sorted[i] == selector.selectRandQuickSort(a, i + 1).getKey();
         }
     }
     private static void TestQuickSelection() {
@@ -38,7 +38,7 @@ public class Main {
         int[] sorted = a.clone();
         Arrays.sort(sorted);
         for(int i = 0; i < a.length; i++){
-            assert sorted[i] == selector.randQuickSelect(a, i).getKey();
+            assert sorted[i] == selector.randQuickSelect(a, i + 1).getKey();
         }
 
         int[] arr = {2,1,3};
