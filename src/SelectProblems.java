@@ -3,9 +3,13 @@ import javafx.util.Pair;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 
-
 public class SelectProblems
 {
+
+  enum PivotMethod{
+    RANDOM,
+    MED_OF_MEDS
+  }
 
   public Pair<Integer, Integer> selectRandQuickSort(int [] array, int k)
   {
@@ -29,6 +33,7 @@ public class SelectProblems
     return array;
   }
 
+  //swaps the indexes of two members in array
   private static void swap(int [] array, int ind1, int ind2)
   {
    int temp = array[ind1];
@@ -63,33 +68,21 @@ public class SelectProblems
   public Pair<Integer, Integer> randQuickSelect(int [] array, int k)
   {
     ComparisonCounter c = new ComparisonCounter();
-    Integer selected = quickSelectRec(array, k, 0, array.length, c);
+    Integer selected = quickSelectRec(array, k, 0, array.length, c, PivotMethod.RANDOM);
     return new Pair<Integer, Integer>(selected, c.getCount()); // to be replaced by student code. (The k'th element,#of comparsion)
   }
 
-  private int quickSelectRec(int[] array, int k, int start, int end, ComparisonCounter c){
+  private int quickSelectRec(int[] array, int k, int start, int end, ComparisonCounter c, PivotMethod method){
     if (end - start <= 0)
       return array[k];
     //choose a random pivot element
-    int pivot = array[(int)(Math.random() * (end - start) + start)];
+    int pivot = (method == PivotMethod.MED_OF_MEDS)?
+            medOfMed(array, start, end, c) : array[(int)(Math.random() * (end - start) + start)];
     Partition p = new Partition(array, pivot, start, end, c);
     if(p.lessThanSeparator > k)
-      return quickSelectRec(p.array, k, 0, p.lessThanSeparator, c);
+      return quickSelectRec(p.array, k, 0, p.lessThanSeparator, c, method);
     if(p.greaterThanSeparator <= k)
-      return quickSelectRec(p.array, k - p.greaterThanSeparator, p.greaterThanSeparator, p.array.length, c);
-    return pivot;
-  }
-
-  private int quickSelectRec(int[] array, int k, int start, int end, ComparisonCounter c, boolean median){
-    if (end - start <= 0)
-      return array[k];
-    //choose a random pivot element
-    int pivot = median? medOfMed(array, start, end, c) : array[(int)(Math.random() * (end - start) + start)];
-    Partition p = new Partition(array, pivot, start, end, c);
-    if(p.lessThanSeparator > k)
-      return quickSelectRec(p.array, k, 0, p.lessThanSeparator, c, median);
-    if(p.greaterThanSeparator <= k)
-      return quickSelectRec(p.array, k - p.greaterThanSeparator, p.greaterThanSeparator, p.array.length, c, median);
+      return quickSelectRec(p.array, k - p.greaterThanSeparator, p.greaterThanSeparator, p.array.length, c, method);
     return pivot;
   }
 
@@ -109,11 +102,7 @@ public class SelectProblems
       selected++;
     }
     mids[selected] = mid5(array, i, end, c);
-    //if(selected < nMedians - 1)
-    //{
-    //  mids[selected] = mid5(array, i, end, c);
-    //}
-    return  quickSelectRec(mids, (nMedians + 1)/2 ,0,nMedians, c, true);
+    return  quickSelectRec(mids, (nMedians + 1)/2 ,0,nMedians, c, PivotMethod.MED_OF_MEDS);
   }
 //change to private
   public int mid5(int[] array, int start, int end, ComparisonCounter c) {
@@ -132,7 +121,7 @@ public class SelectProblems
   public Pair<Integer, Integer> medOfMedQuickSelect(int [] array, int k)
   {
     ComparisonCounter c = new ComparisonCounter();
-    Integer selected = quickSelectRec(array, k, 0, array.length, c, true);
+    Integer selected = quickSelectRec(array, k, 0, array.length, c, PivotMethod.MED_OF_MEDS);
     return new Pair<Integer, Integer>(selected, c.getCount()); // to be replaced by student code. (The k'th element,#of comparsion)
   }
 
