@@ -5,6 +5,7 @@ public class Main {
     public static void main(String[] args){
         TestQuickSortSelection();
         TestQuickSelection();
+        TestHeapSelection();
     }
     private static void TestQuickSortSelection() {
         SelectProblems selector = new SelectProblems();
@@ -22,6 +23,16 @@ public class Main {
         Arrays.sort(sorted);
         for(int i = 0; i < a.length; i++){
             assert sorted[i] == selector.randQuickSelect(a, i).getKey();
+        }
+    }
+    private static void TestHeapSelection() {
+        SelectProblems selector = new SelectProblems();
+        int[] a = {8, 7, 6, 5, 4, 3, 2, 1};
+        int[] sorted = a.clone();
+        Arrays.sort(sorted);
+        for(int i = 0; i < a.length; i++){
+            //System.out.println(selector.selectHeap(a, 7 - i).getKey());
+            assert sorted[i] == selector.selectHeap(a, i).getKey();
         }
     }
 }

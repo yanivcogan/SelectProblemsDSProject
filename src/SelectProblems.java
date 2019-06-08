@@ -34,7 +34,10 @@ public class SelectProblems
   }
   public Pair<Integer, Integer> selectHeap(int [] array, int k)
   {
-    return new Pair<Integer, Integer>(-1,-1); // to be replaced by student code. (The k'th element,#of comparsion)
+    ComparisonCounter c = new ComparisonCounter();
+    MinHeap heap = new MinHeap(array, c);
+    int res = heap.getNthElement(k);
+    return new Pair<Integer, Integer>(res, c.getCount()); // to be replaced by student code. (The k'th element,#of comparsion)
   }
   public Pair<Integer, Integer> selectDoubleHeap(int [] array, int k)
   {
@@ -104,6 +107,64 @@ public class SelectProblems
     }
     public int getCount(){
       return counter;
+    }
+  }
+  private static class MinHeap{
+    int[] heap;
+    int size;
+    ComparisonCounter c;
+    public MinHeap(int[] elements, ComparisonCounter counter){
+      heap = Arrays.copyOf(elements, elements.length);
+      size = elements.length;
+      c = counter;
+      for(int i = (size / 2); i >= 0; i--){
+        heapifyDown(i);
+      }
+    }
+    public int getNthElement(int n){
+      int min = -1;
+      for(int i = 0; i <= n; i++)
+        min = popMin();
+      return min;
+    }
+    private int popMin(){
+      if(heap.length < 1)
+        throw new RuntimeException("heap overflow");
+      int min = heap[0];
+      heap[0] = heap[size - 1];
+      //this shouldn't have any effect on the array - it's done only to aid with debugging
+      //heap[size - 1] = -99;
+      size = size - 1;
+      heapifyDown(0);
+      return min;
+    }
+    private void heapifyDown(int i){
+      int leftIndex = left(i);
+      int rightIndex = right(i);
+      int n = size;
+      int smallerChildIndex = i;
+      if(leftIndex < n && c.comp(heap[rightIndex], heap[smallerChildIndex]) < 0) {
+        smallerChildIndex = leftIndex;
+      }
+      if(rightIndex < n && c.comp(heap[rightIndex], heap[smallerChildIndex]) < 0) {
+        smallerChildIndex = rightIndex;
+      }
+      if(smallerChildIndex != i)
+      {
+        int currElement = heap[i];
+        heap[i] = heap[smallerChildIndex];
+        heap[smallerChildIndex] = currElement;
+        heapifyDown(smallerChildIndex);
+      }
+    }
+    private int left(int i){
+      return i * 2 + 2;
+    }
+    private int right(int i){
+      return i * 2 + 1;
+    }
+    private int getParentIndex(int index){
+      return (int)Math.floor(index >> 1);
     }
   }
 }
