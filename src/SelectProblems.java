@@ -64,9 +64,43 @@ public class SelectProblems
     int res = heap.getNthElement(k);
     return new Pair<Integer, Integer>(res, c.getCount());
   }
+
+  //TODO delete
+  public Pair<Integer, Integer> selectIncrementalHeap(int [] array, int k)
+  {
+    ComparisonCounter c = new ComparisonCounter();
+    int[] heapArr = new int[array.length];
+    heapArr[0] = array[0];
+    MinHeap heap = new MinHeap(heapArr, 1, c);
+    for(int i =1; i < array.length; ++i)
+    {
+      heap.insert(array[i]);
+    }
+    int res = heap.getNthElement(k);
+    return new Pair<Integer, Integer>(res, c.getCount());
+  }
+
   public Pair<Integer, Integer> selectDoubleHeap(int [] array, int k)
   {
-    return new Pair<Integer, Integer>(-1,-1); // to be replaced by student code. (The k'th element,#of comparsion)
+    ComparisonCounter c = new ComparisonCounter();
+    MinHeap bigHeap = new MinHeap(array, c);
+    array = bigHeap.getArray();
+    MinHeap smallHeap = new MinHeap(new int[2*k], 1, new ByIndexComprator(array, c));
+    int ind = 0;
+    for(int i = 0; i < k; ++i)
+    {
+      ind = smallHeap.popMin();
+      int right = bigHeap.right(ind);
+      int left = bigHeap.left(ind);
+      if(left < array.length)
+      {
+        smallHeap.insert(left);
+        if(right < array.length) {
+          smallHeap.insert(right);
+        }
+      }
+    }
+    return new Pair<Integer, Integer>(array[ind], c.getCount()); // to be replaced by student code. (The k'th element,#of comparsion)
   }
   public Pair<Integer, Integer> randQuickSelect(int [] array, int k)
   {
@@ -160,7 +194,7 @@ public class SelectProblems
       this.greaterThanSeparator = partition.length - indexFromEnd;
     }
   }
-  private static class ComparisonCounter{
+  public static class ComparisonCounter{
     private int counter;
     public int comp(Integer a, Integer b){
       counter ++;
@@ -176,27 +210,69 @@ public class SelectProblems
       return counter;
     }
   }
-  private static class MinHeap{
+
+  private static class ByIndexComprator extends ComparisonCounter{
+    int[] arr;
+    ComparisonCounter c;
+
+    ByIndexComprator(int[] arr, ComparisonCounter c)
+    {
+      this.arr = arr;
+      this.c = c;
+    }
+
+    public int comp(Integer a, Integer b)
+    {
+      return c.comp(arr[a], arr[b]);
+    }
+
+    public boolean less(Integer a, Integer b)
+    {
+      return c.less(arr[a], arr[b]);
+    }
+  }
+
+  public static class MinHeap{
     int[] heap;
     int size;
     ComparisonCounter c;
-    public MinHeap(int[] elements, ComparisonCounter counter){
+
+    //size indicates number of real elements in heap
+    public MinHeap(int[] elements, int size, ComparisonCounter counter){
       heap = Arrays.copyOf(elements, elements.length);
-      size = elements.length;
+      this.size = size;
       c = counter;
+
       for(int i = (size / 2); i >= 0; i--){
-        heapifyDown(i);
+        heapify(i, true);
       }
     }
+
+    public MinHeap(int[] elements, ComparisonCounter counter){
+      this(elements, elements.length, counter);
+    }
+
+    public void insert(int num)
+    {
+      heap[size] = num;
+      size++;
+      heapify(getParentIndex(size - 1), false);
+    }
+
     public int getNthElement(int n){
       int min = -1;
-      for(int i = 0; i <= n; i++)
+      for(int i = 0; i < n; i++)
         min = popMin();
       return min;
     }
     private int popMin(){
       if(heap.length < 1)
         throw new RuntimeException("heap overflow");
+      if(size == 1)
+      {
+        size--;
+        return heap[0];
+      }
       int min = heap[0];
       heap[0] = heap[size - 1];
       //this shouldn't have any effect on the array - it's done only to aid with debugging
@@ -205,15 +281,20 @@ public class SelectProblems
       heapifyDown(0);
       return min;
     }
+
+    public int[] getArray(){
+      return heap;
+    }
+
     private void heapifyDown(int i){
       int leftIndex = left(i);
       int rightIndex = right(i);
       int n = size;
       int smallerChildIndex = i;
-      if(leftIndex < n && c.comp(heap[rightIndex], heap[smallerChildIndex]) < 0) {
+      if(leftIndex < n && c.less(heap[leftIndex], heap[smallerChildIndex])) {
         smallerChildIndex = leftIndex;
       }
-      if(rightIndex < n && c.comp(heap[rightIndex], heap[smallerChildIndex]) < 0) {
+      if(rightIndex < n && c.less(heap[rightIndex], heap[smallerChildIndex])) {
         smallerChildIndex = rightIndex;
       }
       if(smallerChildIndex != i)
@@ -222,14 +303,41 @@ public class SelectProblems
         heapifyDown(smallerChildIndex);
       }
     }
-    private int left(int i){
+
+    private void heapify(int parentIndex, boolean down){
+      if(parentIndex < 0)
+      {
+        return;
+      }
+      int leftIndex = left(parentIndex);
+      int rightIndex = right(parentIndex);
+      int n = size;
+      int minIndex = parentIndex;
+      if(leftIndex < n && c.comp(heap[leftIndex], heap[minIndex]) < 0) {
+        minIndex = leftIndex;
+      }
+      if(rightIndex < n && c.comp(heap[rightIndex], heap[minIndex]) < 0) {
+        minIndex = rightIndex;
+      }
+      if(minIndex != parentIndex)
+      {
+        swap(heap, parentIndex, minIndex);
+        heapify(down? minIndex : getParentIndex(parentIndex), down);
+      }
+    }
+
+    protected int get(int index){
+      return heap[index];
+    }
+
+    protected int right(int i){
       return i * 2 + 2;
     }
-    private int right(int i){
+    protected int left(int i){
       return i * 2 + 1;
     }
     private int getParentIndex(int index){
-      return (int)Math.floor(index >> 1);
+        return (index + index % 2) / 2 - 1;
     }
   }
 }

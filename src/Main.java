@@ -11,13 +11,44 @@ public class Main {
         TestQuickSelection();
         TestInsertionSort();
         TestMidofMids();
+        TestHeap();
+        TestDoubleHeap();
+        TestHeapSelection();
+    }
+    private static void TestHeap() {
+ /**       TestSelect test = new TestSelect(TestSelect.Func.INCREMENTAL, 1000);
+        try {
+            test.Test();
+        } catch (TestSelect.FailedException e) {
+            e.printStackTrace();
+            e.print();
+        }**/
+        int[] arr = {-1,-2};
+        SelectProblems.MinHeap heap = new SelectProblems.MinHeap(arr,new SelectProblems.ComparisonCounter());
+        printArray(heap.getArray());
+        SelectProblems selector = new SelectProblems();
+        System.out.print(selector.selectHeap(arr,1));
+    }
+
+    private static void TestDoubleHeap() {
+        TestSelect test = new TestSelect(TestSelect.Func.DOUBLE_HEAP, 1000);
+        try {
+            test.Test();
+        } catch (TestSelect.FailedException e) {
+            e.printStackTrace();
+            e.print();
+        }
+        int[] arr = {5, 9, 11, 7, 4, 2, 1, 3, 10, 8, 6};
+        SelectProblems selector = new SelectProblems();
+        System.out.println(selector.selectDoubleHeap(arr, 2));
+
     }
 
     private static void TestMidofMids() {
-        TestSelect test = new TestSelect(TestSelect.Func.MED_OF_MEDS, 1000);
+        TestSelect test = new TestSelect(TestSelect.Func.MED_OF_MEDS, 100);
         try {
             test.Test();
-        } catch (TestSelect.FailedTestException e) {
+        } catch (TestSelect.FailedException e) {
             e.printStackTrace();
             e.print();
         }
@@ -31,6 +62,13 @@ public class Main {
         for(int i = 0; i < a.length; i++){
             assert sorted[i] == selector.selectRandQuickSort(a, i + 1).getKey();
         }
+        TestSelect test = new TestSelect(TestSelect.Func.QUICKSORT, 100);
+        try {
+            test.Test();
+        } catch (TestSelect.FailedException e) {
+            e.printStackTrace();
+            e.print();
+        }
     }
     private static void TestQuickSelection() {
         SelectProblems selector = new SelectProblems();
@@ -41,34 +79,46 @@ public class Main {
             assert sorted[i] == selector.randQuickSelect(a, i + 1).getKey();
         }
 
-        int[] arr = {2,1,3};
-        System.out.println(selector.randQuickSelect(arr, 1));
-        System.out.println(selector.randQuickSelect(arr, 2));
-        System.out.println(selector.randQuickSelect(arr, 3));
+        TestSelect test = new TestSelect(TestSelect.Func.RAND_QUICKSELECT, 1000);
+        try {
+            test.Test();
+        } catch (TestSelect.FailedException e) {
+            e.printStackTrace();
+            e.print();
+        }
     }
 
     private static void TestInsertionSort() {
      TestSelect test = new TestSelect(TestSelect.Func.INSERTION, 100);
      try {
          test.Test();
-     } catch (TestSelect.FailedTestException e) {
+     } catch (TestSelect.FailedException e) {
          e.printStackTrace();
      }
     }
 
+    private static void printArray(int[] arr)
+    {
+        for(int i = 0; i < arr.length; ++i)
+            System.out.print(arr[i] + " ");
+        System.out.println("");
+    }
     private static void TestHeapSelection() {
-        TestSelect test = new TestSelect(TestSelect.Func.HEAP, 100);
+        TestSelect test = new TestSelect(TestSelect.Func.HEAP, 1000);
         try {
             test.Test();
-        } catch (TestSelect.FailedTestException e) {
+        } catch (TestSelect.FailedException e) {
             e.printStackTrace();
+            e.print();
         }
+        int[] arr = {2, 4, 3, 5, 1};
+        SelectProblems.MinHeap heap = new SelectProblems.MinHeap(arr, new SelectProblems.ComparisonCounter());
     }
 
 
     public static class TestSelect{
         private Func func;
-//        private TestType type;
+        private TestType type = TestType.NORMAL;
         private SelectProblems selector;
 
         private Pair<Integer, Integer> select(int[] arr, int k)
@@ -87,6 +137,8 @@ public class Main {
                     return selector.selectHeap(arr, k);
                 case DOUBLE_HEAP:
                     return  selector.selectDoubleHeap(arr, k);
+                case INCREMENTAL:
+                    return  selector.selectIncrementalHeap(arr,k);
             }
             return null;
         }
@@ -97,15 +149,15 @@ public class Main {
             QUICKSORT,
             MED_OF_MEDS,
             HEAP,
-            DOUBLE_HEAP
+            DOUBLE_HEAP,
+            INCREMENTAL
         }
 
-/**        enum TestType
+        enum TestType
         {
-            SELECTION,
-            SORT,
-            HEAP
-        }**/
+            NORMAL,
+            BUILDHEAP
+        }
 
         private static int[] randomList(int size)
         {
@@ -136,10 +188,16 @@ public class Main {
         }
 
         int upTo;
+
         TestSelect(Func func, int upTo)
+        {
+            this(func, upTo, TestType.NORMAL);
+        }
+        TestSelect(Func func, int upTo, TestType type)
         {
             this.func = func;
             this.upTo = upTo;
+            this.type = type;
             selector = new SelectProblems();
 /**            type = TestType.SELECTION;
 
@@ -153,7 +211,7 @@ public class Main {
             }**/
         }
 
-        void Test() throws FailedTestException {
+        void Test() throws FailedTestException, FailedWithException {
             List<Integer> lst = new ArrayList<>();
             int[] arr;
             int[] sorted;
@@ -166,7 +224,13 @@ public class Main {
                 Arrays.sort(sorted);
                 for(int j = 0; j < arr.length; ++j)
                 {
-                    Integer res = select(arr, j+1).getKey();
+                    Integer res = null;
+                    try{
+                        res = select(arr, j+1).getKey();
+                    }catch (Exception e){
+                        throw new FailedWithException(arr, sorted, sorted[j], j+1, e);
+                    }
+
                     if(Integer.compare(sorted[j], res) != 0)
                     {
                         throw new FailedTestException(arr, sorted, sorted[j], res, j+1);
@@ -175,7 +239,7 @@ public class Main {
             }
         }
 
-        private class FailedTestException extends Throwable {
+        private class FailedTestException extends FailedException {
             int[] arr = null;
             int[] sorted = null;
             Integer result = null;
@@ -205,6 +269,44 @@ public class Main {
 
             }
         }
+        private abstract class FailedException extends Throwable {
+            public abstract void print();
+        }
+
+        private class FailedWithException extends FailedException {
+            int expected;
+            Exception e;
+            int[] arr;
+            int[] sorted;
+            int k;
+
+            public FailedWithException(int[] arr, int[] sorted, int expected, int k, Exception e) {
+                this.arr = arr;
+                this.sorted = sorted;
+                this.expected = expected;
+                this.k = k;
+                this.e = e;
+            }
+
+            @Override
+            public void print() {
+                e.printStackTrace();
+                System.out.println("result array:");
+                for(int i = 0; i < arr.length; ++i)
+                    System.out.print(arr[i] + " ");
+                System.out.println("");
+                System.out.println("sorted array:");
+                for(int i = 0; i < sorted.length; ++i)
+                    System.out.print(sorted[i] + " ");
+                System.out.println("");
+                System.out.println("expected " + expected);
+                System.out.println("k " + k);
+            }
+        }
+/**        static void TestCase(int[] arr, int k, int expected)
+        {
+
+        }**/
     }
 
 }
